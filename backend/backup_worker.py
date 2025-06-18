@@ -6,6 +6,7 @@ import zipfile
 import boto3
 from datetime import datetime
 from pathlib import Path
+import shutil
 
 CONFIG_FILE = "db_configs.json"
 
@@ -16,6 +17,14 @@ BACKUP_PATHS = {
     'postgresql': None,
     'mongodb': None
 }
+def rm(path):
+    """Remove a file or directory (recursively)."""
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    elif os.path.isfile(path):
+        os.remove(path)
+    else:
+        raise FileNotFoundError(f"No such file or directory: '{path}'")
 
 def load_config(entity_id):
     try:
@@ -66,9 +75,9 @@ def create_postgresql_dump(config, dump_file):
 def create_mongodb_dump(config, dump_file):
     cmd = [
         "mongodump",
-        f"--host={config['host']}",
-        f"--username={config['user']}",
-        f"--password={config['password']}",
+        f"--host={config.get('host','')}",
+        f"--username={config.get('user','')}",
+        f"--password={config.get('password','')}",
         f"--db={config['database']}",
         f"--out={dump_file}"
     ]
@@ -79,7 +88,16 @@ def create_mongodb_dump(config, dump_file):
 
 def zip_file(input_path, zip_path):
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        zipf.write(input_path, arcname=os.path.basename(input_path))
+        if os.path.isfile(input_path):
+            # If it's a single file, add it directly
+            zipf.write(input_path, arcname=os.path.basename(input_path))
+        elif os.path.isdir(input_path):
+            # If it's a directory, add all its contents
+            for root, _, files in os.walk(input_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, input_path)
+                    zipf.write(file_path, arcname)
 
 def upload_to_s3(zip_path, s3_config):
     s3 = boto3.client(
@@ -122,7 +140,7 @@ def main():
         result = initialize_backup_directories()
         if not result["success"]:
             print(json.dumps(result))
-            return
+            # return
 
     try:
         data = json.load(sys.stdin)
@@ -165,7 +183,8 @@ def main():
             print(json.dumps({"success": False, "error": str(e)}))
     finally:
             if 'dump_file' in locals() and os.path.exists(dump_file):
-                os.remove(dump_file)
+                rm(dump_file)
+                
  
 
 if __name__ == "__main__":
