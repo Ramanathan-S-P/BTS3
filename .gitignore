@@ -1,0 +1,9 @@
+# Environment file in backend directory
+backend/.env
+
+# Virtual environment in backend directory
+backend/venv/
+
+# Python compiled cache files
+backend/__pycache__/
+*.pyc

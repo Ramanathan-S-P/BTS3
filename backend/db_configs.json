@@ -1,0 +1,9 @@
+{
+    "entity_01": {
+        "db_type": "mysql",
+        "host": "localhost",
+        "user": "root",
+        "password": "ramanathan",
+        "database": "student_db"
+    }
+}
