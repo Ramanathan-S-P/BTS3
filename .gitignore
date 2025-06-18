@@ -7,3 +7,4 @@ backend/venv/
 # Python compiled cache files
 backend/__pycache__/
 *.pyc
+backups/
