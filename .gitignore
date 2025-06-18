@@ -8,3 +8,4 @@ backend/venv/
 backend/__pycache__/
 *.pyc
 backups/
+ht.txt
